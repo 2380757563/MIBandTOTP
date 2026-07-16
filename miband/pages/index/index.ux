@@ -41,18 +41,19 @@ const conn = interconnect.instance(),
     dataKey = 'keys'
 //密钥类
 class key {
-    constructor(key, name, usr = '') {
+    constructor(key, name, usr = '', issuer = '') {
         this.name = name
+        this.issuer = issuer
         this.usr = usr
         this.key = key
         this.upd()
     }
     upd() {
-        if(this.name.toLowerCase()==="steam")this.otp=SteamTotp(this.key)
+        if(this.issuer && this.issuer.toLowerCase() === "steam") this.otp = SteamTotp(this.key)
         else this.otp = TOTP(this.key)
     }
     toString() {
-        return `{"name":"${this.name}","usr":${this.usr},"key":${this.key}}`
+        return `{"name":"${this.name}","issuer":"${this.issuer}","usr":"${this.usr}","key":"${this.key}"}`
     }
 }
 export default {
@@ -69,9 +70,8 @@ export default {
             key: dataKey,
             success: (data) => {
                 if (data) {
-                    //prompt.showToast({message:data,duration: 2000})
                     data = JSON.parse(data)
-                    data.list.forEach((e) => this.list.push(new key(e.key, e.name, e.usr)))
+                    data.list.forEach((e) => this.list.push(new key(e.key, e.name, e.usr, e.issuer)))
                 }
             }
         })
@@ -82,9 +82,11 @@ export default {
                     let index = this.list.findIndex((a) => e.key == a.key)
                     if (index != -1) { //当密钥重复时刷新名字
                         this.list[index].name = e.name
+                        this.list[index].issuer = e.issuer || ''
                         this.list[index].usr = e.usr
+                        this.list[index].upd()
                     } else {
-                        this.list.push(new key(e.key, e.name, e.usr))
+                        this.list.push(new key(e.key, e.name, e.usr, e.issuer))
                     }
                 })
                 this.save()
@@ -179,5 +181,4 @@ text{
   border-radius: 99px;
   background-color: #262626;
   border: 3px solid rgba(255, 255, 255, 0.06);
-}
-</style>
+}</style>
